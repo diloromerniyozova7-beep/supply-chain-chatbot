@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supply Chain Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0f0e;
+      --surface:   #141714;
+      --border:    #252825;
+      --border2:   #2e332e;
+      --amber:     #e8a020;
+      --amber-dim: #7a4f08;
+      --green:     #3ddc84;
+      --green-dim: #1a5e38;
+      --red:       #f05050;
+      --text:      #d4d8d3;
+      --text-dim:  #6b726a;
+      --text-mid:  #9aa099;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'IBM Plex Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .shell {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 100vh;
+      height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--amber);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #000;
+      font-family: var(--mono);
+      flex-shrink: 0;
+    }
+    .logo-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--amber);
+      text-transform: uppercase;
+    }
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+      font-family: var(--mono);
+    }
+
+    .sidebar-section {
+      padding: 16px 20px 8px;
+    }
+    .sidebar-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .suggestion-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      line-height: 1.4;
+    }
+    .suggestion-btn:hover {
+      border-color: var(--amber-dim);
+      color: var(--text);
+      background: rgba(232,160,32,0.05);
+    }
+    .suggestion-btn .sug-icon {
+      font-size: 10px;
+      margin-right: 6px;
+      opacity: 0.6;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .db-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .db-dot {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .db-label { color: var(--text-mid); }
+
+    /* ── Main chat area ──────────────────────────────────── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+    }
+    .topbar-title {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .session-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    }
+    .clear-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 12px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      letter-spacing: 0.04em;
+    }
+    .clear-btn:hover {
+      border-color: var(--border2);
+      color: var(--text-mid);
+    }
+
+    /* ── Messages ────────────────────────────────────────── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* welcome */
+    .welcome {
+      max-width: 560px;
+      margin: 40px auto;
+      text-align: center;
+      animation: fadeUp 0.5s ease both;
+    }
+    .welcome-hex {
+      width: 56px; height: 56px;
+      background: var(--amber);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .welcome h2 {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: 0.03em;
+    }
+    .welcome p {
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* message rows */
+    .msg {
+      display: flex;
+      gap: 14px;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(37,40,37,0.6);
+      animation: fadeUp 0.25s ease both;
+    }
+    .msg:last-child { border-bottom: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-avatar {
+      width: 30px; height: 30px;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .msg.user .msg-avatar {
+      background: var(--border2);
+      color: var(--text-mid);
+      border: 1px solid var(--border2);
+    }
+    .msg.bot .msg-avatar {
+      background: var(--amber);
+      color: #000;
+    }
+
+    .msg-body { flex: 1; min-width: 0; }
+
+    .msg-meta {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .msg-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .msg.user .msg-name { color: var(--text-mid); }
+    .msg.bot .msg-name { color: var(--amber); }
+
+    .msg-time {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .msg-content {
+      color: var(--text);
+      font-size: 13.5px;
+      line-height: 1.75;
+      word-break: break-word;
+    }
+    .msg-content p { margin-bottom: 8px; }
+    .msg-content p:last-child { margin-bottom: 0; }
+    .msg-content ul, .msg-content ol {
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+    .msg-content li { margin-bottom: 3px; }
+    .msg-content strong { color: #fff; font-weight: 600; }
+    .msg-content code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: rgba(255,255,255,0.06);
+      padding: 1px 5px;
+      border-radius: 2px;
+      color: var(--amber);
+    }
+    .msg-content h3, .msg-content h4 {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin: 14px 0 6px;
+    }
+
+    /* tool-call indicator */
+    .tool-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--green);
+      background: rgba(61,220,132,0.07);
+      border: 1px solid rgba(61,220,132,0.15);
+      padding: 3px 10px;
+      border-radius: 2px;
+      margin-bottom: 10px;
+    }
+    .tool-indicator svg { width: 11px; height: 11px; }
+
+    /* loading dots */
+    .loading-dots {
+      display: flex; gap: 4px; align-items: center;
+      padding: 4px 0;
+    }
+    .loading-dots span {
+      width: 5px; height: 5px;
+      background: var(--amber);
+      border-radius: 50%;
+      animation: dot-bounce 1.2s infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ── Input area ─────────────────────────────────────── */
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding: 20px 28px 24px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 10px 14px;
+      transition: border-color 0.2s;
+    }
+    .input-row:focus-within {
+      border-color: var(--amber-dim);
+    }
+
+    #user-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13.5px;
+      resize: none;
+      line-height: 1.6;
+      max-height: 160px;
+      min-height: 24px;
+    }
+    #user-input::placeholder { color: var(--text-dim); }
+
+    .send-btn {
+      width: 34px; height: 34px;
+      background: var(--amber);
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .send-btn:hover { background: #d0911c; }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { background: var(--border2); cursor: not-allowed; }
+    .send-btn svg { width: 16px; height: 16px; fill: #000; }
+
+    .input-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">SC</div>
+        <div>
+          <div class="logo-name">Supply Chain</div>
+        </div>
+      </div>
+      <div class="logo-sub">Inventory Assistant · DataCo</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Queries</div>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">📊</span>Give me a full KPI snapshot of the dataset
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">⚠️</span>Which products are at low stock risk?
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">🚚</span>Show me orders with high late-delivery risk in Western Europe
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">💰</span>Which product categories are most profitable?
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">📉</span>How many orders are losing money, and which regions are worst?
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">🏆</span>Top 10 products by total sales
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">🚢</span>Compare shipping mode performance and late delivery rates
+      </button>
+      <button class="suggestion-btn" onclick="sendSuggestion(this)">
+        <span class="sug-icon">🌎</span>Breakdown order volume and sales by market region
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="db-status">
+        <div class="db-dot"></div>
+        <span class="db-label">supply_chain.db</span>
+        <span>· 180k+ records</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">Inventory Chat</div>
+      <div class="session-badge">
+        <button class="clear-btn" onclick="clearChat()">CLEAR SESSION</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-hex">📦</div>
+        <h2>Supply Chain Assistant</h2>
+        <p>Ask me anything about inventory, delivery risk, profitability, or order data.
+           Every answer is grounded in real database queries — no guesswork.</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="user-input"
+          rows="1"
+          placeholder="Ask about stock levels, late deliveries, profit margins…"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">↵ Send &nbsp;·&nbsp; Shift+↵ New line &nbsp;·&nbsp; Answers grounded in live DB queries</div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────
+  let history = [];
+  let isLoading = false;
+
+  // ── Helpers ───────────────────────────────────────────
+  function timestamp() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function scrollToBottom() {
+    const msgs = document.getElementById('messages');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
+
+  // ── Markdown-lite renderer ────────────────────────────
+  function renderMarkdown(text) {
+    return text
+      // Headers
+      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      // Bullet points
+      .replace(/^[\*\-] (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      // Numbered list
+      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+      // Paragraphs
+      .split('\n\n').map(p => {
+        p = p.trim();
+        if (!p) return '';
+        if (p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<ol') || p.startsWith('<li')) return p;
+        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+      }).join('');
+  }
+
+  // ── Append message ────────────────────────────────────
+  function appendMessage(role, text, tools = []) {
+    removeWelcome();
+    const msgs = document.getElementById('messages');
+
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+
+    const avatarLabel = role === 'user' ? 'YOU' : 'AI';
+    const nameLabel   = role === 'user' ? 'You' : 'Assistant';
+
+    let toolHtml = '';
+    if (tools.length > 0) {
+      toolHtml = tools.map(t =>
+        `<div class="tool-indicator">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7 1.49 0 2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg>
+          ${t}
+        </div>`
+      ).join('');
+    }
+
+    div.innerHTML = `
+      <div class="msg-avatar">${avatarLabel}</div>
+      <div class="msg-body">
+        <div class="msg-meta">
+          <span class="msg-name">${nameLabel}</span>
+          <span class="msg-time">${timestamp()}</span>
+        </div>
+        ${toolHtml}
+        <div class="msg-content">${role === 'bot' ? renderMarkdown(text) : `<p>${escapeHtml(text)}</p>`}</div>
+      </div>`;
+
+    msgs.appendChild(div);
+    scrollToBottom();
+  }
+
+  function appendLoading() {
+    removeWelcome();
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.id = 'loading-msg';
+    div.className = 'msg bot';
+    div.innerHTML = `
+      <div class="msg-avatar">AI</div>
+      <div class="msg-body">
+        <div class="msg-meta">
+          <span class="msg-name">Assistant</span>
+          <span class="msg-time">${timestamp()}</span>
+        </div>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>`;
+    msgs.appendChild(div);
+    scrollToBottom();
+  }
+
+  function removeLoading() {
+    const el = document.getElementById('loading-msg');
+    if (el) el.remove();
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Send message ──────────────────────────────────────
+  async function sendMessage() {
+    if (isLoading) return;
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    isLoading = true;
+    document.getElementById('send-btn').disabled = true;
+
+    appendMessage('user', text);
+
+    const historyPayload = history.map(m => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.content
+    }));
+
+    appendLoading();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: historyPayload })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      removeLoading();
+      appendMessage('bot', data.reply, data.tool_calls_made || []);
+
+      // Update session history
+      history.push({ role: 'user', content: text });
+      history.push({ role: 'bot', content: data.reply });
+
+    } catch (err) {
+      removeLoading();
+      appendMessage('bot', `⚠️ Error: ${err.message}. Please check the server is running.`);
+    } finally {
+      isLoading = false;
+      document.getElementById('send-btn').disabled = false;
+      document.getElementById('user-input').focus();
+    }
+  }
+
+  function sendSuggestion(btn) {
+    const text = btn.textContent.replace(/^[^\w]+/, '').trim();
+    document.getElementById('user-input').value = text;
+    sendMessage();
+  }
+
+  function clearChat() {
+    history = [];
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = `
+      <div class="welcome" id="welcome">
+        <div class="welcome-hex">📦</div>
+        <h2>Supply Chain Assistant</h2>
+        <p>Ask me anything about inventory, delivery risk, profitability, or order data.
+           Every answer is grounded in real database queries — no guesswork.</p>
+      </div>`;
+  }
+</script>
+</body>
+</html>
